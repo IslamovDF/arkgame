@@ -4,8 +4,8 @@ import sys
 import os
 
 FPS = 120
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 1024
+HEIGHT = 768
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -23,6 +23,7 @@ score_color = (125, 125, 125)
 bricks_count = 10
 b_width = WIDTH // bricks_count
 b_height = 30
+platform_height = 30
 
 
 def terminate():
@@ -96,10 +97,10 @@ def generate_level(level):
 class Player(pygame.sprite.Sprite):
     def __init__(self,
                  pos_x=WIDTH // 2,
-                 pos_y=HEIGHT - 50,  # отступ для статус-бара (20 - высота платформы, 30 - выс.стат.бара)
+                 pos_y=HEIGHT - 30 - platform_height,  # отступ для статус-бара (30 - выс.стат.бара)
                  speed=10):
         super().__init__(all_sprites, platforms)
-        self.image = pygame.transform.scale(load_image('platform.png'), (120, 20))
+        self.image = pygame.transform.scale(load_image('platform.png'), (120, platform_height))
         self.rect = self.image.get_rect()
         self.rect.centerx = pos_x
         self.rect.centery += pos_y
@@ -121,7 +122,7 @@ class Ball(pygame.sprite.Sprite):
     def __init__(self,
                  game,
                  pos_x=WIDTH // 2,
-                 pos_y=HEIGHT - 50,  # отступ для статус-бара
+                 pos_y=HEIGHT - 30 - platform_height,  # отступ для статус-бара
                  speed_x=5,
                  speed_y=5,
                  active=False):
@@ -154,7 +155,6 @@ class Ball(pygame.sprite.Sprite):
 
         col_brick = pygame.sprite.spritecollide(self, bricks, False)
         if col_brick:
-            print(col_brick)
             col_brick[0].hit()
             self.speed_y *= -1
             self.game.add_score()
