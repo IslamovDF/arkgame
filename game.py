@@ -123,9 +123,10 @@ class Ball(pygame.sprite.Sprite):
                  pos_x=WIDTH // 2,
                  pos_y=HEIGHT - 50,  # отступ для статус-бара
                  speed_x=5,
-                 speed_y=5):
+                 speed_y=5,
+                 active=False):
         super().__init__(all_sprites, balls)
-        self.active = False
+        self.active = active
         self.image = pygame.transform.scale(load_image('ball.png'), (20, 20))
         self.rect = self.image.get_rect()
         self.rect.centerx = pos_x
@@ -200,6 +201,9 @@ def main():
                     player.movement -= player.speed
                 if event.key == pygame.K_RIGHT:
                     player.movement += player.speed
+                if event.key == pygame.K_b:
+                    for _ in range(20):
+                        Ball(game=game, active=True)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     player.movement += player.speed
