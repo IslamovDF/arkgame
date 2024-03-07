@@ -4,8 +4,8 @@ import sys
 import os
 
 FPS = 120
-WIDTH = 1024
-HEIGHT = 768
+WIDTH = 800
+HEIGHT = 600
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -64,15 +64,21 @@ def load_level(filename):
 
 
 class Brick(pygame.sprite.Sprite):
-    def __init__(self, brick_type, pos_x, pos_y):
+    def __init__(self, brick_type, pos_x, pos_y, health=10):
         super().__init__(all_sprites, bricks)
         self.image = pygame.transform.scale(brick_pic[brick_type], (b_width, b_height))
         self.rect = self.image.get_rect()
         self.rect.x = pos_x
         self.rect.y = pos_y
+        self.health = health
 
-    # def update(self):
-    #     pass
+    def hit(self):
+        self.health -= 10
+
+    def update(self):
+        if self.health < 0:
+            self.kill()
+            print(all_sprites.__len__())
 
 
 def generate_level(level):
@@ -80,11 +86,11 @@ def generate_level(level):
     for num_y, line in enumerate(level_data):
         for num_x, brick_t in enumerate(line):
             if brick_t == '@':
-                Brick('blue', num_x * b_width, num_y * b_height)
+                Brick('blue', num_x * b_width, num_y * b_height, health=10)
             if brick_t == '#':
-                Brick('yellow', num_x * b_width, num_y * b_height)
+                Brick('yellow', num_x * b_width, num_y * b_height, health=20)
             if brick_t == '$':
-                Brick('red', num_x * b_width, num_y * b_height)
+                Brick('red', num_x * b_width, num_y * b_height, health=30)
 
 
 class Player(pygame.sprite.Sprite):
@@ -145,6 +151,13 @@ class Ball(pygame.sprite.Sprite):
             self.speed_y *= -1
             self.game.add_score()
 
+        col_brick = pygame.sprite.spritecollide(self, bricks, False)
+        if col_brick:
+            print(col_brick)
+            col_brick[0].hit()
+            self.speed_y *= -1
+            self.game.add_score()
+
 
 class Game:
     def __init__(self):
@@ -158,6 +171,16 @@ class Game:
         player_score = basic_font.render(f'Очки: {str(self.score)}', True, score_color)
         player_score_rect = player_score.get_rect(midleft=(10, HEIGHT - 13))
         screen.blit(player_score, player_score_rect)
+
+    def check_end_of_lvl(self):
+        if len(bricks) < 1:
+            print('end of game')
+            for ball in balls:
+                ball.kill()
+
+    def update(self):
+        self.draw_score()
+        self.check_end_of_lvl()
 
 
 def main():
@@ -186,7 +209,7 @@ def main():
         screen.fill(pygame.Color(0, 0, 0))
         all_sprites.draw(screen)
         all_sprites.update()
-        game.draw_score()
+        game.update()
         pygame.display.flip()
         clock.tick(FPS)
     terminate()
