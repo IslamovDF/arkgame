@@ -3,7 +3,7 @@ import random
 import sys
 import os
 
-FPS = 50
+FPS = 120
 WIDTH = 1024
 HEIGHT = 768
 
@@ -48,8 +48,7 @@ class Player(pygame.sprite.Sprite):
                  pos_y=HEIGHT - 50,  # отступ для статус-бара (20 - высота платформы, 30 - выс.стат.бара)
                  speed=10):
         super().__init__(all_sprites, platforms)
-        self.image = pygame.Surface((100, 20))
-        self.image.fill((155, 155, 155))
+        self.image = pygame.transform.scale(load_image('platform.png'), (100, 20))
         self.rect = self.image.get_rect()
         self.rect.centerx = pos_x
         self.rect.centery += pos_y
@@ -112,9 +111,7 @@ class Game:
 
     def draw_score(self):
         player_score = basic_font.render(f'Очки: {str(self.score)}', True, score_color)
-
         player_score_rect = player_score.get_rect(midleft=(10, HEIGHT - 13))
-
         screen.blit(player_score, player_score_rect)
 
 
