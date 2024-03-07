@@ -15,9 +15,14 @@ pygame.display.set_caption('Game for lyceum project')
 all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
 balls = pygame.sprite.Group()
+bricks = pygame.sprite.Group()
 
 basic_font = pygame.font.Font('freesansbold.ttf', 20)
 score_color = (125, 125, 125)
+
+bricks_count = 10
+b_width = WIDTH // bricks_count
+b_height = 30
 
 
 def terminate():
@@ -42,13 +47,53 @@ def load_image(name, color_key=None):
     return image
 
 
+brick_pic = {'blue': load_image('blue_brick.png'),
+             'yellow': load_image('yellow_brick.png'),
+             'red': load_image('red_brick.png')}
+
+
+def load_level(filename):
+    filename = "data/" + filename
+    try:
+        with open(filename, 'r') as mapFile:
+            level_file = [line.strip() for line in mapFile]
+    except FileNotFoundError:
+        print('Указанный файл не существует')
+        terminate()
+    return level_file
+
+
+class Brick(pygame.sprite.Sprite):
+    def __init__(self, brick_type, pos_x, pos_y):
+        super().__init__(all_sprites, bricks)
+        self.image = pygame.transform.scale(brick_pic[brick_type], (b_width, b_height))
+        self.rect = self.image.get_rect()
+        self.rect.x = pos_x
+        self.rect.y = pos_y
+
+    # def update(self):
+    #     pass
+
+
+def generate_level(level):
+    level_data = load_level(f'level_{level}.txt')
+    for num_y, line in enumerate(level_data):
+        for num_x, brick_t in enumerate(line):
+            if brick_t == '@':
+                Brick('blue', num_x * b_width, num_y * b_height)
+            if brick_t == '#':
+                Brick('yellow', num_x * b_width, num_y * b_height)
+            if brick_t == '$':
+                Brick('red', num_x * b_width, num_y * b_height)
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self,
                  pos_x=WIDTH // 2,
                  pos_y=HEIGHT - 50,  # отступ для статус-бара (20 - высота платформы, 30 - выс.стат.бара)
                  speed=10):
         super().__init__(all_sprites, platforms)
-        self.image = pygame.transform.scale(load_image('platform.png'), (100, 20))
+        self.image = pygame.transform.scale(load_image('platform.png'), (120, 20))
         self.rect = self.image.get_rect()
         self.rect.centerx = pos_x
         self.rect.centery += pos_y
@@ -79,9 +124,9 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = pos_x
         self.rect.bottom = pos_y
-        self.speed_x = speed_x * random.choice((-1,1))
+        self.speed_x = speed_x * random.choice((-1, 1))
         # добавляем элемент случайности
-        self.speed_y = speed_y - ((random.randrange(15) / 10) * random.choice((-1,1)))
+        self.speed_y = speed_y - ((random.randrange(15) / 10) * random.choice((-1, 1)))
         self.game = game
 
     def update(self):
@@ -119,6 +164,7 @@ def main():
     game = Game()
     player = Player()
     ball = Ball(game=game)
+    generate_level(1)
     running = True
     while running:
         for event in pygame.event.get():
