@@ -135,7 +135,11 @@ class Ball(pygame.sprite.Sprite):
         self.speed_x = speed_x * random.choice((-1, 1))
         # добавляем элемент случайности
         self.speed_y = speed_y - ((random.randrange(15) / 10) * random.choice((-1, 1)))
-        self.game = game
+        self.game = game  # экземпляр класса Game
+
+    def stop(self):
+        self.rect.centerx = WIDTH // 2
+        self.rect.centery = HEIGHT - 30 - platform_height
 
     def update(self):
         if self.active:
@@ -146,24 +150,31 @@ class Ball(pygame.sprite.Sprite):
     def collisions(self):
         if self.rect.top <= 0 or self.rect.bottom >= HEIGHT - 30:
             self.speed_y *= -1
+            # print(f'>>1')
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
 
         if pygame.sprite.spritecollide(self, platforms, False):
             self.speed_y *= -1
             self.game.add_score()
+            # print(f'>>2')
 
         col_brick = pygame.sprite.spritecollide(self, bricks, False)
         if col_brick:
             col_brick[0].hit()
             self.speed_y *= -1
             self.game.add_score()
+            # print(f'>>3')
 
 
 class Game:
     def __init__(self):
         self.score = 0
         self.score_step = 10
+        self.player = Player()
+        self.lvl = 1
+        self.ball = None
+        self.start()
 
     def add_score(self):
         self.score += self.score_step
@@ -176,19 +187,28 @@ class Game:
     def check_end_of_lvl(self):
         if len(bricks) < 1:
             print('end of game')
-            for ball in balls:
-                ball.kill()
+            for b in balls:
+                b.kill()
+            self.lvl = self.lvl + 1
+            self.start()
+
+    def start(self):
+        generate_level(self.lvl)
+        self.ball = Ball(game=self)
 
     def update(self):
+        screen.fill(pygame.Color(0, 0, 0))
         self.draw_score()
         self.check_end_of_lvl()
+        all_sprites.draw(screen)
+        all_sprites.update()
+        pygame.display.flip()
+        clock.tick(FPS)
+        print(len(balls))
 
 
 def main():
     game = Game()
-    player = Player()
-    ball = Ball(game=game)
-    generate_level(1)
     running = True
     while running:
         for event in pygame.event.get():
@@ -196,26 +216,20 @@ def main():
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    ball.active = True
+                    game.ball.active = True
                 if event.key == pygame.K_LEFT:
-                    player.movement -= player.speed
+                    game.player.movement -= game.player.speed
                 if event.key == pygame.K_RIGHT:
-                    player.movement += player.speed
+                    game.player.movement += game.player.speed
                 if event.key == pygame.K_b:
                     for _ in range(20):
                         Ball(game=game, active=True)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
-                    player.movement += player.speed
+                    game.player.movement += game.player.speed
                 if event.key == pygame.K_RIGHT:
-                    player.movement -= player.speed
-
-        screen.fill(pygame.Color(0, 0, 0))
-        all_sprites.draw(screen)
-        all_sprites.update()
+                    game.player.movement -= game.player.speed
         game.update()
-        pygame.display.flip()
-        clock.tick(FPS)
     terminate()
 
 
