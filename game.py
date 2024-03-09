@@ -149,6 +149,9 @@ class Ball(pygame.sprite.Sprite):
             self.rect.centerx += self.speed_x
             self.rect.centery -= self.speed_y
             self.collisions()
+        else:
+            for obj_platform in platforms:
+                self.rect.centerx = self.game.player.rect.centerx
 
     def collisions(self):
         """Столкновения мяча с другими объектами"""
