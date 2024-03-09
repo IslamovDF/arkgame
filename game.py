@@ -1,5 +1,5 @@
 import pygame
-import random
+from random import randrange, choice
 import sys
 import os
 
@@ -16,6 +16,7 @@ all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
 balls = pygame.sprite.Group()
 bricks = pygame.sprite.Group()
+bonuses = pygame.sprite.Group()
 
 basic_font = pygame.font.Font('freesansbold.ttf', 20)
 score_color = (125, 125, 125)
@@ -24,6 +25,7 @@ bricks_count = 10
 b_width = WIDTH // bricks_count
 b_height = 30
 platform_height = 30
+stat_bar_height = 30
 
 
 def terminate():
@@ -54,6 +56,7 @@ brick_pic = {'blue': load_image('blue_brick.png'),
 
 
 def load_level(filename):
+    """Функция для загрузки уровней из файла"""
     filename = "data/" + filename
     try:
         with open(filename, 'r') as mapFile:
@@ -77,7 +80,7 @@ class Brick(pygame.sprite.Sprite):
         self.health -= 10
 
     def update(self):
-        if self.health < 0:
+        if self.health <= 0:
             self.kill()
             print(all_sprites.__len__())
 
@@ -95,9 +98,10 @@ def generate_level(level):
 
 
 class Player(pygame.sprite.Sprite):
+    """Платформа игрока"""
     def __init__(self,
                  pos_x=WIDTH // 2,
-                 pos_y=HEIGHT - 30 - platform_height,  # отступ для статус-бара (30 - выс.стат.бара)
+                 pos_y=HEIGHT - stat_bar_height - platform_height,  # отступ для статус-бара
                  speed=10):
         super().__init__(all_sprites, platforms)
         self.image = pygame.transform.scale(load_image('platform.png'), (120, platform_height))
@@ -122,7 +126,7 @@ class Ball(pygame.sprite.Sprite):
     def __init__(self,
                  game,
                  pos_x=WIDTH // 2,
-                 pos_y=HEIGHT - 30 - platform_height,  # отступ для статус-бара
+                 pos_y=HEIGHT - stat_bar_height - platform_height,  # отступ для статус-бара
                  speed_x=5,
                  speed_y=5,
                  active=False):
@@ -132,29 +136,40 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = pos_x
         self.rect.bottom = pos_y
-        self.speed_x = speed_x * random.choice((-1, 1))
+        self.speed_x = speed_x * choice((-1, 1))
         # добавляем элемент случайности
-        self.speed_y = speed_y - ((random.randrange(15) / 10) * random.choice((-1, 1)))
+        self.speed_y = speed_y - ((randrange(15) / 10) * choice((-1, 1)))
         self.game = game  # экземпляр класса Game
 
     def stop(self):
         self.rect.centerx = WIDTH // 2
-        self.rect.centery = HEIGHT - 30 - platform_height
+        self.rect.centery = HEIGHT - stat_bar_height - platform_height
 
     def update(self):
         if self.active:
             self.rect.centerx += self.speed_x
             self.rect.centery -= self.speed_y
             self.collisions()
+        else:
+            for obj_platform in platforms:
+                self.rect.centerx = self.game.player.rect.centerx
 
     def collisions(self):
-        if self.rect.top <= 0 or self.rect.bottom >= HEIGHT - 30:
+        """Столкновения мяча с другими объектами"""
+        if self.rect.top <= 0:
             self.speed_y *= -1
-            # print(f'>>1')
+            self.speed_y = self.speed_y  # - ((random.randrange(10) / 10) * random.choice((-1, 1)))
+        if self.rect.bottom >= HEIGHT - stat_bar_height:
+            for b in balls:
+                b.kill()  # удаляем все мячи для исключения повторного вычитания жизней
+            self.game.skip_the_ball()
+
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
 
-        if pygame.sprite.spritecollide(self, platforms, False):
+        col_platform = pygame.sprite.spritecollide(self, platforms, False)
+        if col_platform:
+            self.rect.bottom = col_platform[0].rect.y  # убираем баг с ударом в бок платформы
             self.speed_y *= -1
             self.game.add_score()
             # print(f'>>2')
@@ -163,8 +178,63 @@ class Ball(pygame.sprite.Sprite):
         if col_brick:
             col_brick[0].hit()
             self.speed_y *= -1
+            self.speed_y = self.speed_y - ((randrange(10) / 10) * choice((-1, 1)))
             self.game.add_score()
+            if randrange(0, 100) <= 50:
+                Bonuses(self.game, randrange(1, 3), self.rect.centerx, self.rect.centery, 50, 50, 4)
             # print(f'>>3')
+
+
+class Bonuses(pygame.sprite.Sprite):
+    """Класс для выпадающих бонусов"""
+    def __init__(self, game, type_of_bonuse, pos_x, pos_y, w, h, frame_count):
+        super().__init__(all_sprites, bonuses)
+        self.type_of_bonuse = type_of_bonuse
+        self.frames = [pygame.transform.scale(load_image(f'b{self.type_of_bonuse}_{i}.png'),
+                                              (w, h)) for i in range(frame_count)]
+        self.fr_count = 0
+        self.frame_count = frame_count
+        self.image = self.frames[0]
+        self.rect = self.image.get_rect()
+        self.rect.centerx = pos_x
+        self.rect.centery = pos_y
+        self.game = game
+
+    def collisions(self):
+        if pygame.sprite.spritecollide(self, platforms, False):
+            if self.type_of_bonuse == 1:
+                self.game.lives += 1
+                self.kill()
+            if self.type_of_bonuse == 2:
+                self.game.restart_game()
+                SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
+
+    def update(self):
+        self.fr_count = (self.fr_count + 0.03) % self.frame_count
+        self.image = self.frames[int(self.fr_count)]
+        self.rect.centery += 3
+        self.collisions()
+
+
+class SetScreen:
+    def __init__(self, pic_name, text, x, y):
+        self.pic_name = pic_name
+        self.text_msg = text
+        self.pos_x = x
+        self.pos_y = y
+
+    def set_screen(self):
+        background = pygame.transform.scale(load_image(self.pic_name), (WIDTH, HEIGHT))
+        screen.blit(background, (0, 0))
+        font = pygame.font.Font(None, 30)
+        for line in self.text_msg:
+            string_rendered = font.render(line, True, 'white')
+            intro_rect = string_rendered.get_rect()
+            intro_rect.top = self.pos_y
+            intro_rect.x = self.pos_x
+            screen.blit(string_rendered, intro_rect)
+            self.pos_y += intro_rect.height + 10
+        pygame.display.flip()
 
 
 class Game:
@@ -173,38 +243,70 @@ class Game:
         self.score_step = 10
         self.player = Player()
         self.lvl = 1
+        self.lives = 3
         self.ball = None
-        self.start()
+        self.start_g = False
+        self.start_script()
 
     def add_score(self):
         self.score += self.score_step
 
+    def skip_the_ball(self):
+        self.ball = Ball(game=self)
+        self.lives -= 1
+        print(f'lives = {self.lives}')
+        if self.lives == 0:
+            self.restart_game()
+            SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
+
     def draw_score(self):
-        player_score = basic_font.render(f'Очки: {str(self.score)}', True, score_color)
+        player_score = basic_font.render(f'Очки: {str(self.score)}      Уровень: {self.lvl}     '
+                                         f'Жизни: {self.lives}', True, score_color)
         player_score_rect = player_score.get_rect(midleft=(10, HEIGHT - 13))
         screen.blit(player_score, player_score_rect)
 
     def check_end_of_lvl(self):
         if len(bricks) < 1:
-            print('end of game')
+            print('end of lvl')
             for b in balls:
                 b.kill()
             self.lvl = self.lvl + 1
             self.start()
 
     def start(self):
+        for b in bonuses:
+            b.kill()  # убираем все бонусы
         generate_level(self.lvl)
         self.ball = Ball(game=self)
 
+    def restart_game(self):
+        for i in all_sprites:
+            i.kill()
+        self.score = 0
+        self.score_step = 10
+        self.player = Player()
+        self.lvl = 1
+        self.lives = 3
+        self.ball = None
+        self.start_g = False
+        self.start()
+
+    def start_script(self):
+        SetScreen('start_screen.jpg', ['Проект для аттестации',
+                                       'Для начала игры нажмите Space (пробел)',
+                                       'Для запуска мяча нажмите Space (пробел)'], 300, 130).set_screen()
+        self.start()
+
     def update(self):
-        screen.fill(pygame.Color(0, 0, 0))
-        self.draw_score()
-        self.check_end_of_lvl()
-        all_sprites.draw(screen)
-        all_sprites.update()
-        pygame.display.flip()
-        clock.tick(FPS)
-        print(len(balls))
+        if self.start_g:
+            screen.fill(pygame.Color(0, 0, 0))
+            self.draw_score()
+            self.check_end_of_lvl()
+            all_sprites.draw(screen)
+            all_sprites.update()
+            pygame.display.flip()
+            clock.tick(FPS)
+            # print(len(balls))
 
 
 def main():
@@ -215,20 +317,28 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
+                print(f'pygame.KEYDOWN = {event.type == pygame.KEYDOWN} mov = {game.player.movement}')
+                if event.key == pygame.K_RETURN:
+                    pass  # game.start_g = True
                 if event.key == pygame.K_SPACE:
-                    game.ball.active = True
-                if event.key == pygame.K_LEFT:
+                    if game.start_g:  # если игра началась, запускаем шар
+                        game.ball.active = True
+                    else:
+                        game.start_g = True
+                if event.key == pygame.K_LEFT and game.start_g:
                     game.player.movement -= game.player.speed
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT and game.start_g:
                     game.player.movement += game.player.speed
-                if event.key == pygame.K_b:
-                    for _ in range(20):
+                if event.key == pygame.K_b and game.start_g:
+                    for _ in range(10):
                         Ball(game=game, active=True)
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
+            if event.type == pygame.KEYUP and game.start_g:
+                print(f'pygame.KEYUP = {event.type == pygame.KEYUP} mov = {game.player.movement}')
+                if event.key == pygame.K_LEFT and game.start_g:
                     game.player.movement += game.player.speed
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT and game.start_g:
                     game.player.movement -= game.player.speed
+
         game.update()
     terminate()
 
