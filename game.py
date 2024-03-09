@@ -209,7 +209,7 @@ class Game:
         self.score += self.score_step
 
     def draw_score(self):
-        player_score = basic_font.render(f'Очки: {str(self.score)}', True, score_color)
+        player_score = basic_font.render(f'Очки: {str(self.score)} уровень: {self.lvl}', True, score_color)
         player_score_rect = player_score.get_rect(midleft=(10, HEIGHT - 13))
         screen.blit(player_score, player_score_rect)
 
@@ -263,7 +263,6 @@ def main():
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
-                    print('>>>')
                     game.start_g = True
                 if event.key == pygame.K_SPACE:
                     if game.start_g:  # если игра началась, запускаем шар
