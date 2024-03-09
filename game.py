@@ -148,9 +148,13 @@ class Ball(pygame.sprite.Sprite):
             self.collisions()
 
     def collisions(self):
-        if self.rect.top <= 0 or self.rect.bottom >= HEIGHT - 30:
+        if self.rect.top <= 0:
             self.speed_y *= -1
-            # print(f'>>1')
+        if self.rect.bottom >= HEIGHT - 30:
+            self.game.restart_game()
+            SetScreen('gameover.jpg', ['Для начала игры нажмите Enter']).set_screen()
+
+
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
 
@@ -194,8 +198,8 @@ class Game:
         self.player = Player()
         self.lvl = 1
         self.ball = None
-        self.start_script()
         self.start_g = False
+        self.start_script()
 
     def add_score(self):
         self.score += self.score_step
@@ -216,6 +220,17 @@ class Game:
     def start(self):
         generate_level(self.lvl)
         self.ball = Ball(game=self)
+
+    def restart_game(self):
+        for i in all_sprites:
+            i.kill()
+        self.score = 0
+        self.score_step = 10
+        self.player = Player()
+        self.lvl = 1
+        self.ball = None
+        self.start_g = False
+        self.start()
 
     def start_script(self):
         SetScreen('start_screen.jpg', ['Проект для аттестации',
@@ -244,6 +259,7 @@ def main():
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
+                    print('>>>')
                     game.start_g = True
                 if event.key == pygame.K_SPACE:
                     if game.start_g:  # если игра началась, запускаем шар
