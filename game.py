@@ -24,6 +24,7 @@ bricks_count = 10
 b_width = WIDTH // bricks_count
 b_height = 30
 platform_height = 30
+stat_bar_height = 30
 
 
 def terminate():
@@ -54,6 +55,7 @@ brick_pic = {'blue': load_image('blue_brick.png'),
 
 
 def load_level(filename):
+    """Функция для загрузки уровней из файла"""
     filename = "data/" + filename
     try:
         with open(filename, 'r') as mapFile:
@@ -77,7 +79,7 @@ class Brick(pygame.sprite.Sprite):
         self.health -= 10
 
     def update(self):
-        if self.health < 0:
+        if self.health <= 0:
             self.kill()
             print(all_sprites.__len__())
 
@@ -95,9 +97,10 @@ def generate_level(level):
 
 
 class Player(pygame.sprite.Sprite):
+    """Платформа игрока"""
     def __init__(self,
                  pos_x=WIDTH // 2,
-                 pos_y=HEIGHT - 30 - platform_height,  # отступ для статус-бара (30 - выс.стат.бара)
+                 pos_y=HEIGHT - stat_bar_height - platform_height,  # отступ для статус-бара
                  speed=10):
         super().__init__(all_sprites, platforms)
         self.image = pygame.transform.scale(load_image('platform.png'), (120, platform_height))
@@ -122,7 +125,7 @@ class Ball(pygame.sprite.Sprite):
     def __init__(self,
                  game,
                  pos_x=WIDTH // 2,
-                 pos_y=HEIGHT - 30 - platform_height,  # отступ для статус-бара
+                 pos_y=HEIGHT - stat_bar_height - platform_height,  # отступ для статус-бара
                  speed_x=5,
                  speed_y=5,
                  active=False):
@@ -139,7 +142,7 @@ class Ball(pygame.sprite.Sprite):
 
     def stop(self):
         self.rect.centerx = WIDTH // 2
-        self.rect.centery = HEIGHT - 30 - platform_height
+        self.rect.centery = HEIGHT - stat_bar_height - platform_height
 
     def update(self):
         if self.active:
@@ -150,10 +153,10 @@ class Ball(pygame.sprite.Sprite):
     def collisions(self):
         if self.rect.top <= 0:
             self.speed_y *= -1
-        if self.rect.bottom >= HEIGHT - 30:
+            self.speed_y = self.speed_y - ((random.randrange(10) / 10) * random.choice((-1, 1)))
+        if self.rect.bottom >= HEIGHT - stat_bar_height:
             self.game.restart_game()
             SetScreen('gameover.jpg', ['Для начала игры нажмите Enter']).set_screen()
-
 
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
@@ -167,12 +170,13 @@ class Ball(pygame.sprite.Sprite):
         if col_brick:
             col_brick[0].hit()
             self.speed_y *= -1
+            self.speed_y = self.speed_y - ((random.randrange(10) / 10) * random.choice((-1, 1)))
             self.game.add_score()
             # print(f'>>3')
 
 
 class SetScreen:
-    def __init__(self, pic_name, text=[]):
+    def __init__(self, pic_name, text):
         self.pic_name = pic_name
         self.text_msg = text
 
