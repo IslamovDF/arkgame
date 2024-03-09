@@ -1,5 +1,5 @@
 import pygame
-import random
+from random import randrange, choice
 import sys
 import os
 
@@ -16,6 +16,7 @@ all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
 balls = pygame.sprite.Group()
 bricks = pygame.sprite.Group()
+bonuses = pygame.sprite.Group()
 
 basic_font = pygame.font.Font('freesansbold.ttf', 20)
 score_color = (125, 125, 125)
@@ -135,9 +136,9 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = pos_x
         self.rect.bottom = pos_y
-        self.speed_x = speed_x * random.choice((-1, 1))
+        self.speed_x = speed_x * choice((-1, 1))
         # добавляем элемент случайности
-        self.speed_y = speed_y - ((random.randrange(15) / 10) * random.choice((-1, 1)))
+        self.speed_y = speed_y - ((randrange(15) / 10) * choice((-1, 1)))
         self.game = game  # экземпляр класса Game
 
     def stop(self):
@@ -177,9 +178,42 @@ class Ball(pygame.sprite.Sprite):
         if col_brick:
             col_brick[0].hit()
             self.speed_y *= -1
-            self.speed_y = self.speed_y - ((random.randrange(10) / 10) * random.choice((-1, 1)))
+            self.speed_y = self.speed_y - ((randrange(10) / 10) * choice((-1, 1)))
             self.game.add_score()
+            if randrange(0, 100) <= 50:
+                Bonuses(self.game, randrange(1, 3), self.rect.centerx, self.rect.centery, 50, 50, 4)
             # print(f'>>3')
+
+
+class Bonuses(pygame.sprite.Sprite):
+    """Класс для выпадающих бонусов"""
+    def __init__(self, game, type_of_bonuse, pos_x, pos_y, w, h, frame_count):
+        super().__init__(all_sprites, bonuses)
+        self.type_of_bonuse = type_of_bonuse
+        self.frames = [pygame.transform.scale(load_image(f'b{self.type_of_bonuse}_{i}.png'),
+                                              (w, h)) for i in range(frame_count)]
+        self.fr_count = 0
+        self.frame_count = frame_count
+        self.image = self.frames[0]
+        self.rect = self.image.get_rect()
+        self.rect.centerx = pos_x
+        self.rect.centery = pos_y
+        self.game = game
+
+    def collisions(self):
+        if pygame.sprite.spritecollide(self, platforms, False):
+            if self.type_of_bonuse == 1:
+                self.game.lives += 1
+                self.kill()
+            if self.type_of_bonuse == 2:
+                self.game.restart_game()
+                SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
+
+    def update(self):
+        self.fr_count = (self.fr_count + 0.03) % self.frame_count
+        self.image = self.frames[int(self.fr_count)]
+        self.rect.centery += 3
+        self.collisions()
 
 
 class SetScreen:
@@ -240,6 +274,8 @@ class Game:
             self.start()
 
     def start(self):
+        for b in bonuses:
+            b.kill()  # убираем все бонусы
         generate_level(self.lvl)
         self.ball = Ball(game=self)
 
