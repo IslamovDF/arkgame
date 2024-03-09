@@ -156,8 +156,9 @@ class Ball(pygame.sprite.Sprite):
             self.speed_y *= -1
             self.speed_y = self.speed_y  # - ((random.randrange(10) / 10) * random.choice((-1, 1)))
         if self.rect.bottom >= HEIGHT - stat_bar_height:
-            self.game.restart_game()
-            SetScreen('gameover.jpg', ['Для начала игры нажмите Space']).set_screen()
+            for b in balls:
+                b.kill()  # удаляем все мячи для исключения повторного вычитания жизней
+            self.game.skip_the_ball()
 
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
@@ -204,6 +205,7 @@ class Game:
         self.score_step = 10
         self.player = Player()
         self.lvl = 1
+        self.lives = 3
         self.ball = None
         self.start_g = False
         self.start_script()
@@ -211,8 +213,17 @@ class Game:
     def add_score(self):
         self.score += self.score_step
 
+    def skip_the_ball(self):
+        self.ball = Ball(game=self)
+        self.lives -= 1
+        print(f'lives = {self.lives}')
+        if self.lives == 0:
+            self.restart_game()
+            SetScreen('gameover.jpg', ['Для начала игры нажмите Space']).set_screen()
+
     def draw_score(self):
-        player_score = basic_font.render(f'Очки: {str(self.score)} уровень: {self.lvl}', True, score_color)
+        player_score = basic_font.render(f'Очки: {str(self.score)}      Уровень: {self.lvl}     '
+                                         f'Жизни: {self.lives}', True, score_color)
         player_score_rect = player_score.get_rect(midleft=(10, HEIGHT - 13))
         screen.blit(player_score, player_score_rect)
 
@@ -235,6 +246,7 @@ class Game:
         self.score_step = 10
         self.player = Player()
         self.lvl = 1
+        self.lives = 3
         self.ball = None
         self.start_g = False
         self.start()
