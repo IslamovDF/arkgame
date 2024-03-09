@@ -154,10 +154,10 @@ class Ball(pygame.sprite.Sprite):
         """Столкновения мяча с другими объектами"""
         if self.rect.top <= 0:
             self.speed_y *= -1
-            self.speed_y = self.speed_y - ((random.randrange(10) / 10) * random.choice((-1, 1)))
+            self.speed_y = self.speed_y  # - ((random.randrange(10) / 10) * random.choice((-1, 1)))
         if self.rect.bottom >= HEIGHT - stat_bar_height:
             self.game.restart_game()
-            SetScreen('gameover.jpg', ['Для начала игры нажмите Enter']).set_screen()
+            SetScreen('gameover.jpg', ['Для начала игры нажмите Space']).set_screen()
 
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
@@ -218,7 +218,7 @@ class Game:
 
     def check_end_of_lvl(self):
         if len(bricks) < 1:
-            print('end of game')
+            print('end of lvl')
             for b in balls:
                 b.kill()
             self.lvl = self.lvl + 1
@@ -254,7 +254,7 @@ class Game:
             all_sprites.update()
             pygame.display.flip()
             clock.tick(FPS)
-            print(len(balls))
+            # print(len(balls))
 
 
 def main():
@@ -265,25 +265,28 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
+                print(f'pygame.KEYDOWN = {event.type == pygame.KEYDOWN} mov = {game.player.movement}')
                 if event.key == pygame.K_RETURN:
-                    pass  #game.start_g = True
+                    pass  # game.start_g = True
                 if event.key == pygame.K_SPACE:
                     if game.start_g:  # если игра началась, запускаем шар
                         game.ball.active = True
                     else:
                         game.start_g = True
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_LEFT and game.start_g:
                     game.player.movement -= game.player.speed
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT and game.start_g:
                     game.player.movement += game.player.speed
-                if event.key == pygame.K_b:
+                if event.key == pygame.K_b and game.start_g:
                     for _ in range(20):
                         Ball(game=game, active=True)
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
+            if event.type == pygame.KEYUP and game.start_g:
+                print(f'pygame.KEYUP = {event.type == pygame.KEYUP} mov = {game.player.movement}')
+                if event.key == pygame.K_LEFT and game.start_g:
                     game.player.movement += game.player.speed
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT and game.start_g:
                     game.player.movement -= game.player.speed
+
         game.update()
     terminate()
 
