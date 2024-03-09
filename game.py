@@ -167,6 +167,26 @@ class Ball(pygame.sprite.Sprite):
             # print(f'>>3')
 
 
+class SetScreen:
+    def __init__(self, pic_name, text=[]):
+        self.pic_name = pic_name
+        self.text_msg = text
+
+    def set_screen(self):
+        background = pygame.transform.scale(load_image(self.pic_name), (WIDTH, HEIGHT))
+        screen.blit(background, (0, 0))
+        font = pygame.font.Font(None, 30)
+        text_coord = 60
+        for line in self.text_msg:
+            string_rendered = font.render(line, True, 'white')
+            intro_rect = string_rendered.get_rect()
+            intro_rect.top = text_coord
+            intro_rect.x = 10
+            screen.blit(string_rendered, intro_rect)
+            text_coord += intro_rect.height + 10
+        pygame.display.flip()
+
+
 class Game:
     def __init__(self):
         self.score = 0
@@ -174,7 +194,8 @@ class Game:
         self.player = Player()
         self.lvl = 1
         self.ball = None
-        self.start()
+        self.start_script()
+        self.start_g = False
 
     def add_score(self):
         self.score += self.score_step
@@ -196,15 +217,22 @@ class Game:
         generate_level(self.lvl)
         self.ball = Ball(game=self)
 
+    def start_script(self):
+        SetScreen('start_screen.jpg', ['Проект для аттестации',
+                                       'Для начала игры нажмите Enter (интер)',
+                                       'Для запуска мяча нажмите Space (пробел)']).set_screen()
+        self.start()
+
     def update(self):
-        screen.fill(pygame.Color(0, 0, 0))
-        self.draw_score()
-        self.check_end_of_lvl()
-        all_sprites.draw(screen)
-        all_sprites.update()
-        pygame.display.flip()
-        clock.tick(FPS)
-        print(len(balls))
+        if self.start_g:
+            screen.fill(pygame.Color(0, 0, 0))
+            self.draw_score()
+            self.check_end_of_lvl()
+            all_sprites.draw(screen)
+            all_sprites.update()
+            pygame.display.flip()
+            clock.tick(FPS)
+            print(len(balls))
 
 
 def main():
@@ -215,8 +243,11 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    game.start_g = True
                 if event.key == pygame.K_SPACE:
-                    game.ball.active = True
+                    if game.start_g:  # если игра началась, запускаем шар
+                        game.ball.active = True
                 if event.key == pygame.K_LEFT:
                     game.player.movement -= game.player.speed
                 if event.key == pygame.K_RIGHT:
