@@ -151,6 +151,7 @@ class Ball(pygame.sprite.Sprite):
             self.collisions()
 
     def collisions(self):
+        """Столкновения мяча с другими объектами"""
         if self.rect.top <= 0:
             self.speed_y *= -1
             self.speed_y = self.speed_y - ((random.randrange(10) / 10) * random.choice((-1, 1)))
@@ -161,7 +162,9 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
 
-        if pygame.sprite.spritecollide(self, platforms, False):
+        col_platform = pygame.sprite.spritecollide(self, platforms, False)
+        if col_platform:
+            self.rect.bottom = col_platform[0].rect.y  # убираем баг с ударом в бок платформы
             self.speed_y *= -1
             self.game.add_score()
             # print(f'>>2')
@@ -238,7 +241,7 @@ class Game:
 
     def start_script(self):
         SetScreen('start_screen.jpg', ['Проект для аттестации',
-                                       'Для начала игры нажмите Enter (интер)',
+                                       'Для начала игры нажмите Space (пробел)',
                                        'Для запуска мяча нажмите Space (пробел)']).set_screen()
         self.start()
 
@@ -263,10 +266,12 @@ def main():
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
-                    game.start_g = True
+                    pass  #game.start_g = True
                 if event.key == pygame.K_SPACE:
                     if game.start_g:  # если игра началась, запускаем шар
                         game.ball.active = True
+                    else:
+                        game.start_g = True
                 if event.key == pygame.K_LEFT:
                     game.player.movement -= game.player.speed
                 if event.key == pygame.K_RIGHT:
