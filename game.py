@@ -183,22 +183,23 @@ class Ball(pygame.sprite.Sprite):
 
 
 class SetScreen:
-    def __init__(self, pic_name, text):
+    def __init__(self, pic_name, text, x, y):
         self.pic_name = pic_name
         self.text_msg = text
+        self.pos_x = x
+        self.pos_y = y
 
     def set_screen(self):
         background = pygame.transform.scale(load_image(self.pic_name), (WIDTH, HEIGHT))
         screen.blit(background, (0, 0))
         font = pygame.font.Font(None, 30)
-        text_coord = 60
         for line in self.text_msg:
             string_rendered = font.render(line, True, 'white')
             intro_rect = string_rendered.get_rect()
-            intro_rect.top = text_coord
-            intro_rect.x = 10
+            intro_rect.top = self.pos_y
+            intro_rect.x = self.pos_x
             screen.blit(string_rendered, intro_rect)
-            text_coord += intro_rect.height + 10
+            self.pos_y += intro_rect.height + 10
         pygame.display.flip()
 
 
@@ -222,7 +223,7 @@ class Game:
         print(f'lives = {self.lives}')
         if self.lives == 0:
             self.restart_game()
-            SetScreen('gameover.jpg', ['Для начала игры нажмите Space']).set_screen()
+            SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
 
     def draw_score(self):
         player_score = basic_font.render(f'Очки: {str(self.score)}      Уровень: {self.lvl}     '
@@ -257,7 +258,7 @@ class Game:
     def start_script(self):
         SetScreen('start_screen.jpg', ['Проект для аттестации',
                                        'Для начала игры нажмите Space (пробел)',
-                                       'Для запуска мяча нажмите Space (пробел)']).set_screen()
+                                       'Для запуска мяча нажмите Space (пробел)'], 300, 130).set_screen()
         self.start()
 
     def update(self):
@@ -293,7 +294,7 @@ def main():
                 if event.key == pygame.K_RIGHT and game.start_g:
                     game.player.movement += game.player.speed
                 if event.key == pygame.K_b and game.start_g:
-                    for _ in range(20):
+                    for _ in range(10):
                         Ball(game=game, active=True)
             if event.type == pygame.KEYUP and game.start_g:
                 print(f'pygame.KEYUP = {event.type == pygame.KEYUP} mov = {game.player.movement}')
