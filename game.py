@@ -182,6 +182,7 @@ class Ball(pygame.sprite.Sprite):
             pygame.mixer.Sound.play(plob_sound)
             self.rect.bottom = col_platform[0].rect.y  # убираем баг с ударом в бок платформы
             self.speed_y *= -1
+            self.speed_y -= ((randrange(10) / 10) * choice((-1, 1)))
             self.game.add_score()
             # print(f'>>2')
 
@@ -190,7 +191,7 @@ class Ball(pygame.sprite.Sprite):
             pygame.mixer.Sound.play(plob_sound)
             col_brick[0].hit()
             self.speed_y *= -1
-            self.speed_y = self.speed_y - ((randrange(10) / 10) * choice((-1, 1)))
+            self.speed_y = self.speed_y
             self.game.add_score()
             if randrange(0, 100) <= 1:
                 pygame.mixer.Sound.play(bonus_sound)
