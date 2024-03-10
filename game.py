@@ -12,20 +12,30 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.display.set_caption('Game for lyceum project')
 
+pygame.mixer.pre_init(44100,-16,2,512)
+plob_sound = pygame.mixer.Sound("data/pong.wav")
+lost_sound = pygame.mixer.Sound("data/lostball.wav")
+bonus_sound = pygame.mixer.Sound("data/bonus.wav")
+game_over_sound = pygame.mixer.Sound("data/gameover.ogg")
+
 all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
 balls = pygame.sprite.Group()
 bricks = pygame.sprite.Group()
 bonuses = pygame.sprite.Group()
 
-basic_font = pygame.font.Font('freesansbold.ttf', 20)
-score_color = (125, 125, 125)
+BG_COLOR = pygame.Color(33, 34, 54)
+BASIC_FONT = pygame.font.Font('freesansbold.ttf', 20)
+SCORE_COLOR = (125, 125, 125)
 
 bricks_count = 10
 b_width = WIDTH // bricks_count
 b_height = 30
 platform_height = 30
 stat_bar_height = 30
+
+cheat_mode = False
+cap_lvl = 6
 
 
 def terminate():
@@ -159,7 +169,8 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.top <= 0:
             self.speed_y *= -1
             self.speed_y = self.speed_y  # - ((random.randrange(10) / 10) * random.choice((-1, 1)))
-        if self.rect.bottom >= HEIGHT - stat_bar_height:
+        if self.rect.bottom >= HEIGHT - stat_bar_height and cheat_mode != True:
+            pygame.mixer.Sound.play(lost_sound)
             for b in balls:
                 b.kill()  # удаляем все мячи для исключения повторного вычитания жизней
             self.game.skip_the_ball()
@@ -169,6 +180,7 @@ class Ball(pygame.sprite.Sprite):
 
         col_platform = pygame.sprite.spritecollide(self, platforms, False)
         if col_platform:
+            pygame.mixer.Sound.play(plob_sound)
             self.rect.bottom = col_platform[0].rect.y  # убираем баг с ударом в бок платформы
             self.speed_y *= -1
             self.game.add_score()
@@ -176,11 +188,13 @@ class Ball(pygame.sprite.Sprite):
 
         col_brick = pygame.sprite.spritecollide(self, bricks, False)
         if col_brick:
+            pygame.mixer.Sound.play(plob_sound)
             col_brick[0].hit()
             self.speed_y *= -1
             self.speed_y = self.speed_y - ((randrange(10) / 10) * choice((-1, 1)))
             self.game.add_score()
-            if randrange(0, 100) <= 50:
+            if randrange(0, 100) <= 1:
+                pygame.mixer.Sound.play(bonus_sound)
                 Bonuses(self.game, randrange(1, 3), self.rect.centerx, self.rect.centery, 50, 50, 4)
             # print(f'>>3')
 
@@ -206,13 +220,16 @@ class Bonuses(pygame.sprite.Sprite):
                 self.game.lives += 1
                 self.kill()
             if self.type_of_bonuse == 2:
-                self.game.restart_game()
-                SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
+                self.kill()
+                pygame.mixer.Sound.play(lost_sound)
+                for b in balls:
+                    b.kill()  # удаляем все мячи для исключения повторного вычитания жизней
+                self.game.skip_the_ball()
 
     def update(self):
-        self.fr_count = (self.fr_count + 0.03) % self.frame_count
+        self.fr_count = (self.fr_count + 0.02) % self.frame_count
         self.image = self.frames[int(self.fr_count)]
-        self.rect.centery += 3
+        self.rect.centery += 1
         self.collisions()
 
 
@@ -238,6 +255,7 @@ class SetScreen:
 
 
 class Game:
+
     def __init__(self):
         self.score = 0
         self.score_step = 10
@@ -256,12 +274,13 @@ class Game:
         self.lives -= 1
         print(f'lives = {self.lives}')
         if self.lives == 0:
+            pygame.mixer.Sound.play(game_over_sound)
             self.restart_game()
             SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
 
     def draw_score(self):
-        player_score = basic_font.render(f'Очки: {str(self.score)}      Уровень: {self.lvl}     '
-                                         f'Жизни: {self.lives}', True, score_color)
+        player_score = BASIC_FONT.render(f'Очки: {str(self.score)}      Уровень: {self.lvl}     '
+                                         f'Жизни: {self.lives}', True, SCORE_COLOR)
         player_score_rect = player_score.get_rect(midleft=(10, HEIGHT - 13))
         screen.blit(player_score, player_score_rect)
 
@@ -271,6 +290,8 @@ class Game:
             for b in balls:
                 b.kill()
             self.lvl = self.lvl + 1
+            if self.lvl >= cap_lvl:
+                self.lvl = cap_lvl
             self.start()
 
     def start(self):
@@ -299,7 +320,7 @@ class Game:
 
     def update(self):
         if self.start_g:
-            screen.fill(pygame.Color(0, 0, 0))
+            screen.fill(BG_COLOR)
             self.draw_score()
             self.check_end_of_lvl()
             all_sprites.draw(screen)
