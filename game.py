@@ -34,6 +34,9 @@ b_height = 30
 platform_height = 30
 stat_bar_height = 30
 
+cheat_mode = False
+cap_lvl = 6
+
 
 def terminate():
     pygame.quit()
@@ -166,7 +169,7 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.top <= 0:
             self.speed_y *= -1
             self.speed_y = self.speed_y  # - ((random.randrange(10) / 10) * random.choice((-1, 1)))
-        if self.rect.bottom >= HEIGHT - stat_bar_height:
+        if self.rect.bottom >= HEIGHT - stat_bar_height and cheat_mode != True:
             pygame.mixer.Sound.play(lost_sound)
             for b in balls:
                 b.kill()  # удаляем все мячи для исключения повторного вычитания жизней
@@ -252,6 +255,7 @@ class SetScreen:
 
 
 class Game:
+
     def __init__(self):
         self.score = 0
         self.score_step = 10
@@ -286,6 +290,8 @@ class Game:
             for b in balls:
                 b.kill()
             self.lvl = self.lvl + 1
+            if self.lvl >= cap_lvl:
+                self.lvl = cap_lvl
             self.start()
 
     def start(self):
