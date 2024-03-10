@@ -12,7 +12,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.display.set_caption('Game for lyceum project')
 
-pygame.mixer.pre_init(44100,-16,2,512)
+pygame.mixer.pre_init(44100, -16, 2, 512)
 plob_sound = pygame.mixer.Sound("data/pong.wav")
 lost_sound = pygame.mixer.Sound("data/lostball.wav")
 bonus_sound = pygame.mixer.Sound("data/bonus.wav")
@@ -34,7 +34,6 @@ b_height = 30
 platform_height = 30
 stat_bar_height = 30
 
-cheat_mode = False
 cap_lvl = 6
 
 
@@ -161,7 +160,7 @@ class Ball(pygame.sprite.Sprite):
             self.rect.centery -= self.speed_y
             self.collisions()
         else:
-            for obj_platform in platforms:
+            for _ in platforms:
                 self.rect.centerx = self.game.player.rect.centerx
 
     def collisions(self):
@@ -169,7 +168,7 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.top <= 0:
             self.speed_y *= -1
             self.speed_y = self.speed_y  # - ((random.randrange(10) / 10) * random.choice((-1, 1)))
-        if self.rect.bottom >= HEIGHT - stat_bar_height and cheat_mode != True:
+        if self.rect.bottom >= HEIGHT - stat_bar_height:
             pygame.mixer.Sound.play(lost_sound)
             for b in balls:
                 b.kill()  # удаляем все мячи для исключения повторного вычитания жизней
