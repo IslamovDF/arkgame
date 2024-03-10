@@ -16,6 +16,7 @@ pygame.mixer.pre_init(44100,-16,2,512)
 plob_sound = pygame.mixer.Sound("data/pong.wav")
 lost_sound = pygame.mixer.Sound("data/lostball.wav")
 bonus_sound = pygame.mixer.Sound("data/bonus.wav")
+game_over_sound = pygame.mixer.Sound("data/gameover.ogg")
 
 all_sprites = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
@@ -189,7 +190,7 @@ class Ball(pygame.sprite.Sprite):
             self.speed_y *= -1
             self.speed_y = self.speed_y - ((randrange(10) / 10) * choice((-1, 1)))
             self.game.add_score()
-            if randrange(0, 100) <= 5:
+            if randrange(0, 100) <= 1:
                 pygame.mixer.Sound.play(bonus_sound)
                 Bonuses(self.game, randrange(1, 3), self.rect.centerx, self.rect.centery, 50, 50, 4)
             # print(f'>>3')
@@ -216,8 +217,11 @@ class Bonuses(pygame.sprite.Sprite):
                 self.game.lives += 1
                 self.kill()
             if self.type_of_bonuse == 2:
-                self.game.restart_game()
-                SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
+                self.kill()
+                pygame.mixer.Sound.play(lost_sound)
+                for b in balls:
+                    b.kill()  # удаляем все мячи для исключения повторного вычитания жизней
+                self.game.skip_the_ball()
 
     def update(self):
         self.fr_count = (self.fr_count + 0.02) % self.frame_count
@@ -266,6 +270,7 @@ class Game:
         self.lives -= 1
         print(f'lives = {self.lives}')
         if self.lives == 0:
+            pygame.mixer.Sound.play(game_over_sound)
             self.restart_game()
             SetScreen('gameover.jpg', ['Для начала игры нажмите Space'], 350, 60).set_screen()
 
