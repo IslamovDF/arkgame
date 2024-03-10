@@ -193,7 +193,7 @@ class Ball(pygame.sprite.Sprite):
             self.speed_y *= -1
             self.speed_y = self.speed_y - ((randrange(10) / 10) * choice((-1, 1)))
             self.game.add_score()
-            if randrange(0, 100) <= 1:
+            if randrange(0, 100) <= 5:
                 pygame.mixer.Sound.play(bonus_sound)
                 Bonuses(self.game, randrange(1, 3), self.rect.centerx, self.rect.centery, 50, 50, 4)
             # print(f'>>3')
